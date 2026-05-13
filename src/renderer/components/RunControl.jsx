@@ -14,7 +14,6 @@ export default function RunControl({ accounts, tasks, settings, monitors, logs, 
   const enabledMonitors = monitors.filter((m) => m.enabled);
 
   const startEngine = async () => {
-    if (!window.electronAPI) { addLog('error', 'Electron API 不可用'); return; }
     if (!enabledAccounts.length) { addLog('warn', '没有启用的账号'); return; }
     if (!enabledTasks.length && !enabledMonitors.length) { addLog('warn', '没有启用的任务或监控'); return; }
 
@@ -26,7 +25,7 @@ export default function RunControl({ accounts, tasks, settings, monitors, logs, 
       monitors,
       platforms: {}, // 后续可扩展平台级配置
     };
-    const res = await window.electronAPI.startEngine(config);
+    const res = await api.startEngine(config);
     if (res.success) addLog('success', '引擎启动成功');
     else addLog('error', `引擎启动失败: ${res.error}`);
   };
@@ -48,17 +47,15 @@ export default function RunControl({ accounts, tasks, settings, monitors, logs, 
   };
 
   const exportConfig = async () => {
-    if (!window.electronAPI) return;
     const config = { global: settings, accounts, tasks, monitors };
-    await window.electronAPI.exportConfig(config);
+    await api.exportConfig(config);
     addLog('info', '配置已导出');
   };
 
   const runTaskNow = async (taskId) => {
-    if (!window.electronAPI) return;
     if (engineStatus.status !== 'running') { addLog('warn', '请先启动引擎'); return; }
     addLog('info', '手动执行任务...');
-    const res = await window.electronAPI.runTask(taskId);
+    const res = await api.runTask(taskId);
     if (res.success) addLog('success', '任务执行完成');
     else addLog('error', res.error);
   };
