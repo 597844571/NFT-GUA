@@ -27,20 +27,54 @@ function createWindow() {
     backgroundColor: '#070911',
   });
 
+  // 调试：记录关键路径
+  const indexPath = path.join(__dirname, 'dist/index.html');
+  const preloadPath = path.join(__dirname, 'dist-electron/preload.js');
+  console.log('[main] __dirname:', __dirname);
+  console.log('[main] index.html exists:', fs.existsSync(indexPath), '->', indexPath);
+  console.log('[main] preload.js exists:', fs.existsSync(preloadPath), '->', preloadPath);
+
   // 加载页面
+  const isDev = !app.isPackaged;
   const devUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
-  if (process.env.NODE_ENV === 'development' || process.env.VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(devUrl).catch(() => {
-      // 如果 dev server 还没启动，等 1 秒重试
+  if (isDev && (process.env.NODE_ENV === 'development' || process.env.VITE_DEV_SERVER_URL)) {
+    mainWindow.loadURL(devUrl).catch((err) => {
+      console.error('[main] loadURL failed:', err.message);
       setTimeout(() => mainWindow.loadURL(devUrl), 1000);
     });
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
+    mainWindow.loadFile(indexPath).catch((err) => {
+      console.error('[main] loadFile failed:', err.message);
+      // 加载失败时直接显示空白窗口，至少让用户知道程序在运行
+      mainWindow.show();
+    });
   }
 
+  // ready-to-show 触发时显示窗口
   mainWindow.once('ready-to-show', () => {
+    console.log('[main] ready-to-show triggered, showing window');
     mainWindow.show();
+    mainWindow.focus();
+  });
+
+  // 备用：did-finish-load 也显示窗口（防止 ready-to-show 不触发）
+  mainWindow.webContents.once('did-finish-load', () => {
+    console.log('[main] did-finish-load triggered');
+    if (!mainWindow.isVisible()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  // 加载失败处理
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    console.error('[main] did-fail-load:', errorCode, errorDescription);
+  });
+
+  // 渲染进程崩溃/关闭
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[main] render-process-gone:', details);
   });
 
   mainWindow.on('closed', () => {
