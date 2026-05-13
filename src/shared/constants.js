@@ -80,9 +80,9 @@ export const DEFAULT_PLATFORMS = [
       decomposeCountInput: '',
       decomposeConfirmButton: '',
       // 公告/活动通知相关选择器
-      noticeItem: '',
-      noticeTitle: '',
-      noticeTime: '',
+      noticeItem: '.zp-paging-container-content > uni-view.item',
+      noticeTitle: '.notice-title',
+      noticeTime: '.notice-time',
       noticeLink: '',
       noticeSummary: '',
     },

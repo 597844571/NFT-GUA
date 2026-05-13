@@ -36,4 +36,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   importConfig: () => ipcRenderer.invoke('fs:importConfig'),
   exportExcel: (data) => ipcRenderer.invoke('fs:exportExcel', data),
   importExcel: () => ipcRenderer.invoke('fs:importExcel'),
+
+  // 页面扫描
+  scanPage: (url, pageType) => ipcRenderer.invoke('scanner:scan', { url, pageType }),
 });

@@ -4,6 +4,7 @@ const fs = require('fs');
 const express = require('express');
 const Engine = require('./src/main/engine');
 const Logger = require('./src/main/logger');
+const Scanner = require('./src/main/scanner');
 
 let mainWindow = null;
 let engine = null;
@@ -248,4 +249,15 @@ ipcMain.handle('fs:importExcel', async () => {
     return { success: true, data };
   }
   return { success: false };
+});
+
+// 页面扫描 IPC
+ipcMain.handle('scanner:scan', async (_event, { url, pageType }) => {
+  const scanner = new Scanner();
+  try {
+    const result = await scanner.scan(url, { pageType });
+    return result;
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });

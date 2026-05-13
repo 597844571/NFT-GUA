@@ -30,6 +30,11 @@ const DEFAULT_SELECTORS = {
   decomposeEntry: '',
   decomposeCountInput: '',
   decomposeConfirmButton: '',
+  noticeItem: '',
+  noticeTitle: '',
+  noticeTime: '',
+  noticeLink: '',
+  noticeSummary: '',
 };
 
 const SELECTOR_GROUPS = [
@@ -86,20 +91,37 @@ const SELECTOR_GROUPS = [
       { key: 'decomposeConfirmButton', label: '确认分解按钮', placeholder: 'button:has-text("确认分解")' },
     ],
   },
+  {
+    title: '📢 公告页面',
+    items: [
+      { key: 'noticeItem', label: '公告列表项', placeholder: '.notice-list > .item' },
+      { key: 'noticeTitle', label: '公告标题', placeholder: '.notice-title' },
+      { key: 'noticeTime', label: '公告时间', placeholder: '.notice-time' },
+      { key: 'noticeLink', label: '公告链接', placeholder: 'a[href]' },
+      { key: 'noticeSummary', label: '公告摘要', placeholder: '.notice-summary' },
+    ],
+  },
 ];
 
 export default function PlatformManager({ platforms, setPlatforms, addLog }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    name: '', key: '', homeUrl: '', loginUrl: '', marketUrl: '', warehouseUrl: '', activityUrl: '', saleUrl: '',
+    name: '', key: '', homeUrl: '', loginUrl: '', marketUrl: '', warehouseUrl: '', activityUrl: '', saleUrl: '', noticeUrl: '',
     selectors: { ...DEFAULT_SELECTORS },
   });
   const [activeGroup, setActiveGroup] = useState(0);
 
+  // 扫描器状态
+  const [scanUrl, setScanUrl] = useState('');
+  const [scanType, setScanType] = useState('auto');
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
+
   const reset = () => {
     setEditing(null);
-    setForm({ name: '', key: '', homeUrl: '', loginUrl: '', marketUrl: '', warehouseUrl: '', activityUrl: '', saleUrl: '', selectors: { ...DEFAULT_SELECTORS } });
+    setForm({ name: '', key: '', homeUrl: '', loginUrl: '', marketUrl: '', warehouseUrl: '', activityUrl: '', saleUrl: '', noticeUrl: '', selectors: { ...DEFAULT_SELECTORS } });
     setActiveGroup(0);
+    setScanResult(null);
   };
 
   const submit = (e) => {
@@ -121,6 +143,7 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
       name: plat.name, key: plat.key,
       homeUrl: plat.homeUrl || '', loginUrl: plat.loginUrl || '', marketUrl: plat.marketUrl || '',
       warehouseUrl: plat.warehouseUrl || '', activityUrl: plat.activityUrl || '', saleUrl: plat.saleUrl || '',
+      noticeUrl: plat.noticeUrl || '',
       selectors: { ...DEFAULT_SELECTORS, ...(plat.selectors || {}) },
     });
   };
@@ -149,6 +172,8 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
           marketUrl: data.marketUrl || s.marketUrl,
           warehouseUrl: data.warehouseUrl || s.warehouseUrl,
           activityUrl: data.activityUrl || s.activityUrl,
+          saleUrl: data.saleUrl || s.saleUrl,
+          noticeUrl: data.noticeUrl || s.noticeUrl,
           selectors: { ...DEFAULT_SELECTORS, ...(data.selectors || {}) },
         }));
         addLog('success', '已从剪贴板导入配置');
@@ -156,6 +181,35 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
     } catch {
       addLog('error', '剪贴板内容不是有效的 JSON');
     }
+  };
+
+  const runScan = async () => {
+    if (!scanUrl.trim()) { addLog('warn', '请输入要扫描的 URL'); return; }
+    if (!window.electronAPI?.scanPage) { addLog('error', '扫描功能需要 Electron 环境'); return; }
+    setScanning(true);
+    setScanResult(null);
+    addLog('info', `开始扫描: ${scanUrl}`);
+    try {
+      const result = await window.electronAPI.scanPage(scanUrl, scanType);
+      if (result.success) {
+        addLog('success', `扫描完成，发现 ${result.elements?.length || 0} 个元素`);
+        setScanResult(result);
+      } else {
+        addLog('error', `扫描失败: ${result.error}`);
+      }
+    } catch (err) {
+      addLog('error', `扫描异常: ${err.message}`);
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const applyScanSuggestion = (group, key, value) => {
+    updateSelector(key, value);
+    addLog('success', `已应用选择器: ${key} = ${value}`);
+    // 自动切换到对应分组
+    const groupIndex = SELECTOR_GROUPS.findIndex(g => g.title.includes(group));
+    if (groupIndex >= 0) setActiveGroup(groupIndex);
   };
 
   return (
@@ -170,7 +224,7 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
           <div className="autobot-empty">
             暂无平台配置，点击上方按钮添加<br />
             <span style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-              💡 提示：用 <code>npx playwright codegen 平台网址</code> 获取选择器
+              💡 提示：用「自动扫描」功能一键获取选择器
             </span>
           </div>
         ) : (
@@ -185,6 +239,7 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
                   <div>🏠 {plat.homeUrl || '未配置首页'}</div>
                   <div>🔐 {plat.loginUrl || '未配置登录页'}</div>
                   <div>🏪 {plat.marketUrl || '未配置市场页'}</div>
+                  <div>📢 {plat.noticeUrl || '未配置公告页'}</div>
                   <div>
                     🔧 选择器: {Object.values(plat.selectors || {}).filter((v) => v).length} / {Object.keys(DEFAULT_SELECTORS).length}
                   </div>
@@ -218,7 +273,80 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
               <div className="form-row"><label>仓库页 URL</label><input value={form.warehouseUrl} onChange={(e) => setForm((s) => ({ ...s, warehouseUrl: e.target.value }))} placeholder="https://.../warehouse" /></div>
               <div className="form-row"><label>活动页 URL</label><input value={form.activityUrl} onChange={(e) => setForm((s) => ({ ...s, activityUrl: e.target.value }))} placeholder="https://.../activity" /></div>
               <div className="form-row"><label>发售页 URL</label><input value={form.saleUrl} onChange={(e) => setForm((s) => ({ ...s, saleUrl: e.target.value }))} placeholder="https://.../sale" /></div>
+              <div className="form-row" style={{ gridColumn: '1 / -1' }}><label>公告页 URL</label><input value={form.noticeUrl} onChange={(e) => setForm((s) => ({ ...s, noticeUrl: e.target.value }))} placeholder="https://.../notice" /></div>
             </div>
+          </div>
+
+          {/* 自动扫描区域 */}
+          <div className="autobot-card" style={{ marginBottom: 20, border: '1px solid var(--accent-soft)' }}>
+            <h4 style={{ marginBottom: 12, fontSize: 14, color: 'var(--accent)' }}>🔍 自动扫描选择器（实验性）</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 120px', gap: 10, alignItems: 'end' }}>
+              <div className="form-row">
+                <label>页面 URL</label>
+                <input value={scanUrl} onChange={(e) => setScanUrl(e.target.value)} placeholder="https://h5.yluc.cn/#/pages/notice/index" />
+              </div>
+              <div className="form-row">
+                <label>页面类型</label>
+                <select value={scanType} onChange={(e) => setScanType(e.target.value)}>
+                  <option value="auto">🤖 自动识别</option>
+                  <option value="login">🔐 登录页</option>
+                  <option value="market">🏪 市场页</option>
+                  <option value="notice">📢 公告页</option>
+                </select>
+              </div>
+              <button type="button" className="btn-primary" onClick={runScan} disabled={scanning}>
+                {scanning ? '⏳ 扫描中...' : '🔍 开始扫描'}
+              </button>
+            </div>
+
+            {scanResult && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--text-sub)', marginBottom: 8 }}>
+                  扫描结果：{scanResult.title}（{scanResult.elements?.length || 0} 个元素）
+                </div>
+
+                {/* 建议选择器 */}
+                {scanResult.suggestions && Object.keys(scanResult.suggestions).length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--accent)' }}>💡 智能推荐（点击一键填入）</div>
+                    {Object.entries(scanResult.suggestions).map(([group, selectors]) => (
+                      <div key={group} style={{ marginBottom: 8 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-sub)', textTransform: 'capitalize', marginBottom: 4 }}>{group}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {Object.entries(selectors).map(([key, value]) => (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => applyScanSuggestion(group, key, value)}
+                              style={{
+                                padding: '4px 10px', borderRadius: 12, border: '1px solid var(--accent-soft)',
+                                background: 'rgba(255,176,0,0.08)', color: 'var(--accent)', fontSize: 11,
+                                cursor: 'pointer',
+                              }}
+                              title={`${key}: ${value}`}
+                            >
+                              {key}: {value.length > 30 ? value.slice(0, 30) + '...' : value}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 原始元素列表 */}
+                <div style={{ maxHeight: 240, overflow: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: 10 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-sub)', marginBottom: 6 }}>页面元素列表</div>
+                  {scanResult.elements?.slice(0, 50).map((el, i) => (
+                    <div key={i} style={{ fontSize: 11, padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: 8 }}>
+                      <span style={{ color: 'var(--accent)', minWidth: 60 }}>&lt;{el.tag}&gt;</span>
+                      <span style={{ color: 'var(--text-sub)', minWidth: 120 }}>{el.class?.slice(0, 30) || '-'}</span>
+                      <span style={{ color: 'var(--text-main)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{el.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="autobot-card">
