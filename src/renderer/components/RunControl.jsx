@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { api } from '../api';
 
 export default function RunControl({ accounts, tasks, settings, monitors, logs, addLog, clearLogs, engineStatus }) {
   const [isExporting, setIsExporting] = useState(false);
@@ -31,21 +32,18 @@ export default function RunControl({ accounts, tasks, settings, monitors, logs, 
   };
 
   const stopEngine = async () => {
-    if (!window.electronAPI) return;
     addLog('info', '正在停止引擎...');
-    await window.electronAPI.stopEngine();
+    await api.stopEngine();
     addLog('success', '引擎已停止');
   };
 
   const pauseEngine = async () => {
-    if (!window.electronAPI) return;
-    await window.electronAPI.pauseEngine();
+    await api.pauseEngine();
     addLog('warn', '引擎已暂停');
   };
 
   const resumeEngine = async () => {
-    if (!window.electronAPI) return;
-    await window.electronAPI.resumeEngine();
+    await api.resumeEngine();
     addLog('info', '引擎已恢复');
   };
 

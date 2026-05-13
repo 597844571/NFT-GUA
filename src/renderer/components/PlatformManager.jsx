@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { api } from '../api';
 
 const DEFAULT_SELECTORS = {
   loginPhone: '',
@@ -185,12 +186,11 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
 
   const runScan = async () => {
     if (!scanUrl.trim()) { addLog('warn', '请输入要扫描的 URL'); return; }
-    if (!window.electronAPI?.scanPage) { addLog('error', '扫描功能需要 Electron 环境'); return; }
     setScanning(true);
     setScanResult(null);
     addLog('info', `开始扫描: ${scanUrl}`);
     try {
-      const result = await window.electronAPI.scanPage(scanUrl, scanType);
+      const result = await api.scanPage(scanUrl, scanType);
       if (result.success) {
         addLog('success', `扫描完成，发现 ${result.elements?.length || 0} 个元素`);
         setScanResult(result);

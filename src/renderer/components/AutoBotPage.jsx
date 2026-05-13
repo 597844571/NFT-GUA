@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAutoBotStorage } from '../hooks/useAutoBotStorage';
 import { DEFAULT_SETTINGS } from '@shared/constants';
+import { api } from '../api';
 import AccountManager from './AccountManager.jsx';
 import TaskManager from './TaskManager.jsx';
 import MonitorCenter from './MonitorCenter.jsx';
@@ -74,9 +75,8 @@ function SettingsForm({ settings, setSettings, addLog }) {
   const update = (key, value) => setSettings((s) => ({ ...s, [key]: value }));
 
   const testNotify = async () => {
-    if (!window.electronAPI) { addLog('error', 'Electron API 不可用'); return; }
     addLog('info', '正在发送测试推送...');
-    const res = await window.electronAPI.testNotify(settings);
+    const res = await api.testNotify(settings);
     if (res.success) addLog('success', `测试推送成功：${res.results?.map((r) => r.channel).join('、') || '已发送'}`);
     else addLog('error', `测试推送失败：${res.error}`);
   };

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { api } from '../api';
 
 export default function AccountManager({ accounts, setAccounts, platforms, addLog }) {
   const [editing, setEditing] = useState(null);
@@ -37,8 +38,7 @@ export default function AccountManager({ accounts, setAccounts, platforms, addLo
   };
 
   const importJson = async () => {
-    if (!window.electronAPI) return;
-    const res = await window.electronAPI.importConfig();
+    const res = await api.importConfig();
     if (res.success && Array.isArray(res.data.accounts)) {
       setAccounts(res.data.accounts);
       addLog('success', `已导入 ${res.data.accounts.length} 个账号`);
@@ -46,14 +46,12 @@ export default function AccountManager({ accounts, setAccounts, platforms, addLo
   };
 
   const exportExcel = async () => {
-    if (!window.electronAPI) return;
-    await window.electronAPI.exportExcel({ accounts });
+    await api.exportExcel({ accounts });
     addLog('info', '账号 Excel 已导出');
   };
 
   const importExcel = async () => {
-    if (!window.electronAPI) return;
-    const res = await window.electronAPI.importExcel();
+    const res = await api.importExcel();
     if (res.success && Array.isArray(res.data)) {
       const mapped = res.data.map((row, i) => ({
         id: `acc-import-${Date.now()}-${i}`,

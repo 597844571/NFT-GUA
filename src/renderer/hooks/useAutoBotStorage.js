@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DEFAULT_SETTINGS, DEFAULT_PLATFORMS } from '@shared/constants';
+import { api } from '../api';
 
 const STORAGE_KEYS = {
   accounts: 'dcautobot_accounts',
@@ -49,24 +50,20 @@ export function useAutoBotStorage() {
       setMonitorResults((prev) => ({ ...prev, [result.id]: result }));
     };
 
-    if (window.electronAPI) {
-      window.electronAPI.onLog(handleLog);
-      window.electronAPI.onEngineStatus(handleStatus);
-      window.electronAPI.onMonitorUpdate(handleMonitor);
+    api.onLog(handleLog);
+    api.onEngineStatus(handleStatus);
+    api.onMonitorUpdate(handleMonitor);
 
-      // 初始化获取日志和状态
-      window.electronAPI.getLogs().then((history) => {
-        if (history?.length) setLogsState(history);
-      });
-      window.electronAPI.getEngineStatus().then((s) => setEngineStatus(s));
-    }
+    // 初始化获取日志和状态
+    api.getLogs().then((history) => {
+      if (history?.length) setLogsState(history);
+    });
+    api.getEngineStatus().then((s) => setEngineStatus(s));
 
     return () => {
-      if (window.electronAPI) {
-        window.electronAPI.removeAllListeners('push:log');
-        window.electronAPI.removeAllListeners('push:status');
-        window.electronAPI.removeAllListeners('push:monitor');
-      }
+      api.removeAllListeners('log');
+      api.removeAllListeners('status');
+      api.removeAllListeners('monitor');
     };
   }, []);
 
@@ -124,7 +121,7 @@ export function useAutoBotStorage() {
 
   const clearLogs = useCallback(() => {
     setLogsState([]);
-    if (window.electronAPI) window.electronAPI.clearLogs();
+    api.clearLogs();
   }, []);
 
   return {

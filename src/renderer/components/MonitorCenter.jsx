@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { api } from '../api';
 
 export default function MonitorCenter({ accounts, monitors, setMonitors, platforms, monitorResults, addLog, engineStatus }) {
   const [form, setForm] = useState({
@@ -27,8 +28,8 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, platfor
       enabled: true,
     };
     setMonitors((prev) => [item, ...prev]);
-    if (window.electronAPI && engineStatus.status === 'running') {
-      await window.electronAPI.monitorAdd(item);
+    if (engineStatus.status === 'running') {
+      await api.monitorAdd(item);
     }
     addLog('success', `监控已添加: ${item.keyword} [${isMarket ? '市场' : '公告'}]`);
     setForm({ type: 'market', keyword: '', itemId: '', alertPrice: '', autoBuy: false, buyQuantity: 1, platform: 'yluc', refreshInterval: 2 });
@@ -36,19 +37,18 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, platfor
 
   const removeMonitor = async (id) => {
     setMonitors((prev) => prev.filter((m) => m.id !== id));
-    if (window.electronAPI) await window.electronAPI.monitorRemove(id);
+    await api.monitorRemove(id);
     addLog('info', '监控已移除');
   };
 
   const toggleMonitor = async (id) => {
     setMonitors((prev) => prev.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m)));
-    if (window.electronAPI) await window.electronAPI.monitorToggle(id);
+    await api.monitorToggle(id);
   };
 
   const buyNow = async (monId) => {
-    if (!window.electronAPI) { addLog('error', 'Electron API 不可用'); return; }
     addLog('info', '正在执行手动抢单...');
-    const res = await window.electronAPI.buyNow(monId);
+    const res = await api.buyNow(monId);
     if (res.success) addLog('success', '手动抢单已提交');
     else addLog('error', `抢单失败: ${res.error}`);
   };
