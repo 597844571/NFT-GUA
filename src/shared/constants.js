@@ -32,6 +32,10 @@ export const DEFAULT_SETTINGS = {
   serverChanKey: '',
   wechatWorkWebhook: false,
   workWebhookUrl: '',
+  // PushPlus 推送
+  pushplusEnabled: false,
+  pushplusToken: '',
+  pushplusTopic: '',
 };
 
 export const DEFAULT_PLATFORMS = [

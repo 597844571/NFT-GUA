@@ -308,6 +308,7 @@ class Engine {
     // 触发提醒
     if (result.status === 'triggered') {
       this.logger.success(`🚨 监控触发 [${monitor.keyword}] 当前价: ¥${result.currentPrice} ≤ 阈值: ¥${monitor.alertPrice}`);
+      this.notifier.send('🚨 监控触发', `藏品：${monitor.keyword}\n当前价：¥${result.currentPrice}\n阈值：¥${monitor.alertPrice}`).catch(() => {});
 
       // 自动抢单
       if (monitor.autoBuy && matched) {
@@ -318,8 +319,10 @@ class Engine {
           result.status = 'bought';
           this.monitorResults.set(monitor.id, result);
           if (this.onMonitorUpdate) this.onMonitorUpdate(result);
+          this.notifier.send('✅ 自动抢单成功', `藏品：${monitor.keyword}\n价格：¥${result.currentPrice}`).catch(() => {});
         } catch (err) {
           this.logger.error(`自动抢单失败: ${err.message}`);
+          this.notifier.send('❌ 自动抢单失败', `藏品：${monitor.keyword}\n错误：${err.message}`).catch(() => {});
         }
       }
     }
@@ -368,6 +371,7 @@ class Engine {
     this.logger.info(`手动抢单: ${monitor.keyword}，价格: ¥${matched.price}`);
     await adapter.buyItem(page, matched.itemId, monitor.alertPrice, monitor.buyQuantity);
     this.logger.success(`手动抢单完成: ${monitor.keyword}`);
+    this.notifier.send('✅ 手动抢单完成', `藏品：${monitor.keyword}`).catch(() => {});
   }
 
   _emitStatus() {

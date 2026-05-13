@@ -164,6 +164,27 @@ function SettingsForm({ settings, setSettings, addLog }) {
         </div>
       )}
 
+      <div className="form-row">
+        <label className="autobot-check-label inline">
+          <input type="checkbox" checked={settings.pushplusEnabled} onChange={(e) => update('pushplusEnabled', e.target.checked)} />
+          启用 PushPlus 推送（微信群/多人）
+        </label>
+      </div>
+      {settings.pushplusEnabled && (
+        <>
+          <div className="form-row">
+            <label>PushPlus Token</label>
+            <input value={settings.pushplusToken || ''} onChange={(e) => update('pushplusToken', e.target.value)} placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+            <div className="autobot-hint">获取地址：http://www.pushplus.plus → 扫码登录 → 复制 Token</div>
+          </div>
+          <div className="form-row">
+            <label>PushPlus 群组 Topic（可选）</label>
+            <input value={settings.pushplusTopic || ''} onChange={(e) => update('pushplusTopic', e.target.value)} placeholder="留空只发给自己，填了发给整个群组" />
+            <div className="autobot-hint">在 PushPlus 官网创建群组，把朋友的 Token 加进来，所有人都能收到</div>
+          </div>
+        </>
+      )}
+
       <div className="form-actions">
         <button className="btn-secondary" onClick={testNotify}>🧪 测试推送</button>
         <button className="btn-secondary" onClick={() => { setSettings(DEFAULT_SETTINGS); addLog('info', '设置已重置'); }}>重置默认</button>

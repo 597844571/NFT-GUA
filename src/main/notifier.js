@@ -5,6 +5,9 @@ class Notifier {
       serverChanKey: '',
       wechatWorkWebhook: false,
       workWebhookUrl: '',
+      pushplusEnabled: false,
+      pushplusToken: '',
+      pushplusTopic: '',
       ...config,
     };
   }
@@ -18,6 +21,10 @@ class Notifier {
 
     if (this.config.wechatWorkWebhook && this.config.workWebhookUrl) {
       results.push(this._workWebhook(title, message, options).catch((err) => ({ ok: false, channel: '企业微信', error: err.message })));
+    }
+
+    if (this.config.pushplusEnabled && this.config.pushplusToken) {
+      results.push(this._pushplus(title, message).catch((err) => ({ ok: false, channel: 'PushPlus', error: err.message })));
     }
 
     if (results.length === 0) return [];
@@ -34,6 +41,30 @@ class Notifier {
       throw new Error(data.errmsg || data.message || 'Server酱 推送失败');
     }
     return { ok: true, channel: 'Server酱' };
+  }
+
+  // PushPlus（https://www.pushplus.plus）
+  async _pushplus(title, message) {
+    const token = this.config.pushplusToken;
+    const topic = this.config.pushplusTopic;
+    const body = {
+      token,
+      title,
+      content: message.replace(/\n/g, '<br>'),
+      template: 'html',
+    };
+    if (topic) body.topic = topic;
+
+    const res = await fetch('http://www.pushplus.plus/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.code !== 200) {
+      throw new Error(data.msg || 'PushPlus 推送失败');
+    }
+    return { ok: true, channel: 'PushPlus' };
   }
 
   // 企业微信机器人
