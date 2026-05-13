@@ -1,18 +1,19 @@
+const GenericAdapter = require('./generic');
 const YlucAdapter = require('./yluc');
 
-const ADAPTERS = {
+// 保留原有适配器作为兼容，新平台全部走 GenericAdapter
+const LEGACY_ADAPTERS = {
   yluc: YlucAdapter,
-  // 后续添加其他平台
-  // jingtan: require('./jingtan'),
-  // huanhe: require('./huanhe'),
 };
 
 function createAdapter(platformKey, config = {}) {
-  const AdapterClass = ADAPTERS[platformKey];
-  if (!AdapterClass) {
-    throw new Error(`不支持的平台: ${platformKey}。请先在 platforms/index.js 注册适配器。`);
+  // 如果有 legacy 适配器且用户没有配置选择器，使用 legacy
+  const LegacyClass = LEGACY_ADAPTERS[platformKey];
+  if (LegacyClass && !config.selectors) {
+    return new LegacyClass(config);
   }
-  return new AdapterClass(config);
+  // 否则走通用适配器（配置驱动）
+  return new GenericAdapter(config);
 }
 
-module.exports = { createAdapter, ADAPTERS };
+module.exports = { createAdapter, LEGACY_ADAPTERS };

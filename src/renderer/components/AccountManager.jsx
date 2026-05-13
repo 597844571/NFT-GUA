@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { PLATFORMS } from '@shared/constants';
 
-export default function AccountManager({ accounts, setAccounts, addLog }) {
+export default function AccountManager({ accounts, setAccounts, platforms, addLog }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     name: '', platform: 'yluc', phone: '', loginPassword: '', payPassword: '',
@@ -93,7 +92,7 @@ export default function AccountManager({ accounts, setAccounts, addLog }) {
               <div key={acc.id} className={`autobot-card ${!acc.enabled ? 'disabled' : ''}`}>
                 <div className="autobot-card-header">
                   <strong>{acc.name || acc.phone}</strong>
-                  <span className="autobot-badge">{PLATFORMS.find((p) => p.key === acc.platform)?.label || acc.platform}</span>
+                  <span className="autobot-badge">{(platforms || []).find((p) => p.key === acc.platform)?.name || acc.platform}</span>
                   {acc.tags?.map((t) => <span key={t} className="autobot-tag">{t}</span>)}
                 </div>
                 <div className="autobot-card-body">

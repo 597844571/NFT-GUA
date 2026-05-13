@@ -1,5 +1,6 @@
 const { chromium } = require('playwright');
 const { createAdapter } = require('./platforms');
+const Notifier = require('./notifier');
 
 class Engine {
   constructor(config, logger, onStatusChange, onMonitorUpdate) {
@@ -7,6 +8,7 @@ class Engine {
     this.logger = logger;
     this.onStatusChange = onStatusChange;
     this.onMonitorUpdate = onMonitorUpdate;
+    this.notifier = new Notifier(config.global || {});
 
     this.browser = null;
     this.context = null;
@@ -41,6 +43,7 @@ class Engine {
     this.status = 'running';
     this._emitStatus();
     this.logger.success('浏览器已启动');
+    this.notifier.send('DC AutoBot 启动', '引擎已成功启动，开始执行任务').catch(() => {});
 
     // 初始化所有账号的页面
     const accounts = (this.config.accounts || []).filter(a => a.enabled);
@@ -81,6 +84,7 @@ class Engine {
     this.pages.clear();
     this.adapters.clear();
     this.logger.info('引擎已停止');
+    this.notifier.send('DC AutoBot 停止', '引擎已停止运行').catch(() => {});
   }
 
   pause() {
@@ -109,7 +113,8 @@ class Engine {
   }
 
   async _initAccountPage(account) {
-    const adapter = createAdapter(account.platform, this.config.platforms?.[account.platform] || {});
+    const platformConfig = (this.config.platforms || []).find((p) => p.key === account.platform) || {};
+    const adapter = createAdapter(account.platform, platformConfig);
     this.adapters.set(account.id, adapter);
 
     const contextOptions = {};

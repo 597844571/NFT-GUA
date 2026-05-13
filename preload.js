@@ -28,6 +28,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 移除监听（避免内存泄漏）
   removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
 
+  // 通知测试
+  testNotify: (config) => ipcRenderer.invoke('notify:test', config),
+
   // 文件系统
   exportConfig: (data) => ipcRenderer.invoke('fs:exportConfig', data),
   importConfig: () => ipcRenderer.invoke('fs:importConfig'),

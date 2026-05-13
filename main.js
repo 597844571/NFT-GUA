@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const express = require('express');
 const Engine = require('./src/main/engine');
 const Logger = require('./src/main/logger');
 
@@ -51,6 +52,17 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // 启动本地 HTTP 服务（供浏览器访问）
+  const server = express();
+  server.use(express.json());
+  server.use(express.static(path.join(__dirname, 'dist')));
+  server.get('*', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  });
+  server.listen(8765, () => {
+    console.log('DC AutoBot Web Server running at http://localhost:8765');
+  });
+
   logger = new Logger((logEntry) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('push:log', logEntry);
@@ -168,6 +180,18 @@ ipcMain.handle('logs:get', () => {
 ipcMain.handle('logs:clear', () => {
   if (logger) logger.clear();
   return { success: true };
+});
+
+// 通知测试 IPC
+ipcMain.handle('notify:test', async (_event, config) => {
+  const Notifier = require('./src/main/notifier');
+  const notifier = new Notifier(config);
+  try {
+    const results = await notifier.send('DC AutoBot 测试消息', '这是一条测试推送，如果你收到，说明配置正确 ✅');
+    return { success: true, results };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });
 
 // 文件系统 IPC

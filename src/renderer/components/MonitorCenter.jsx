@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { PLATFORMS } from '@shared/constants';
-
-export default function MonitorCenter({ accounts, monitors, setMonitors, monitorResults, addLog, engineStatus }) {
+export default function MonitorCenter({ accounts, monitors, setMonitors, platforms, monitorResults, addLog, engineStatus }) {
   const [form, setForm] = useState({ keyword: '', itemId: '', alertPrice: '', autoBuy: false, buyQuantity: 1, platform: 'yluc', refreshInterval: 2 });
 
   const addMonitor = async () => {
@@ -57,7 +55,7 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, monitor
             <div><label>藏品名称 *</label><input value={form.keyword} onChange={(e) => setForm((s) => ({ ...s, keyword: e.target.value }))} placeholder="如：元力胶囊" /></div>
             <div><label>编号（可选）</label><input value={form.itemId} onChange={(e) => setForm((s) => ({ ...s, itemId: e.target.value }))} placeholder="#82310" /></div>
             <div><label>阈值价格 *</label><input type="number" step="0.01" value={form.alertPrice} onChange={(e) => setForm((s) => ({ ...s, alertPrice: e.target.value }))} placeholder="5.00" /></div>
-            <div><label>平台</label><select value={form.platform} onChange={(e) => setForm((s) => ({ ...s, platform: e.target.value }))}>{PLATFORMS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}</select></div>
+            <div><label>平台</label><select value={form.platform} onChange={(e) => setForm((s) => ({ ...s, platform: e.target.value }))}><option value="">请选择平台</option>{(platforms || []).map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}</select></div>
           </div>
           <div className="form-row" style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
             <label className="autobot-check-label inline"><input type="checkbox" checked={form.autoBuy} onChange={(e) => setForm((s) => ({ ...s, autoBuy: e.target.checked }))} />达到阈值自动抢单</label>

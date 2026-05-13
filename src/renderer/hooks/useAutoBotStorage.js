@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
-import { DEFAULT_SETTINGS } from '@shared/constants';
+import { DEFAULT_SETTINGS, DEFAULT_PLATFORMS } from '@shared/constants';
 
 const STORAGE_KEYS = {
   accounts: 'dcautobot_accounts',
   tasks: 'dcautobot_tasks',
   settings: 'dcautobot_settings',
   monitors: 'dcautobot_monitors',
+  platforms: 'dcautobot_platforms',
 };
 
 function getStorage(key, fallback) {
@@ -28,6 +29,14 @@ export function useAutoBotStorage() {
   const [tasks, setTasksState] = useState(() => getStorage(STORAGE_KEYS.tasks, []));
   const [settings, setSettingsState] = useState(() => getStorage(STORAGE_KEYS.settings, DEFAULT_SETTINGS));
   const [monitors, setMonitorsState] = useState(() => getStorage(STORAGE_KEYS.monitors, []));
+  const [platforms, setPlatformsState] = useState(() => {
+    const saved = getStorage(STORAGE_KEYS.platforms, null);
+    if (saved === null) {
+      setStorage(STORAGE_KEYS.platforms, DEFAULT_PLATFORMS);
+      return DEFAULT_PLATFORMS;
+    }
+    return saved;
+  });
   const [logs, setLogsState] = useState([]);
   const [engineStatus, setEngineStatus] = useState({ status: 'stopped' });
   const [monitorResults, setMonitorResults] = useState({});
@@ -93,6 +102,14 @@ export function useAutoBotStorage() {
     });
   }, []);
 
+  const setPlatforms = useCallback((next) => {
+    setPlatformsState((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      setStorage(STORAGE_KEYS.platforms, value);
+      return value;
+    });
+  }, []);
+
   const addLog = useCallback((level, message, meta = {}) => {
     const entry = {
       id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -119,6 +136,8 @@ export function useAutoBotStorage() {
     setSettings,
     monitors,
     setMonitors,
+    platforms,
+    setPlatforms,
     logs,
     addLog,
     clearLogs,

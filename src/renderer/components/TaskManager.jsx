@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TASK_TYPES, PLATFORMS } from '@shared/constants';
+import { TASK_TYPES } from '@shared/constants';
 
 const DEFAULT_PARAMS = {
   limited_sale: { keyword: '', startTime: '', quantity: 1 },
@@ -9,7 +9,7 @@ const DEFAULT_PARAMS = {
   custom: { description: '', steps: [{ action: 'click', target: '' }] },
 };
 
-export default function TaskManager({ accounts, tasks, setTasks, addLog }) {
+export default function TaskManager({ accounts, tasks, setTasks, platforms, addLog }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [editingId, setEditingId] = useState(null);
@@ -103,7 +103,7 @@ export default function TaskManager({ accounts, tasks, setTasks, addLog }) {
                 <div className="autobot-card-header">
                   <strong>{typeIcon(task.type)} {task.name}</strong>
                   <span className="autobot-badge">{typeLabel(task.type)}</span>
-                  <span className="autobot-badge">{PLATFORMS.find((p) => p.key === task.platform)?.label || task.platform}</span>
+                  <span className="autobot-badge">{(platforms || []).find((p) => p.key === task.platform)?.name || task.platform}</span>
                 </div>
                 <div className="autobot-card-body">
                   <div>👤 执行账号: {(task.accountIds || []).length} 个</div>
