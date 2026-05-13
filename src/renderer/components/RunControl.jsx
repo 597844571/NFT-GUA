@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../api';
 
-export default function RunControl({ accounts, tasks, settings, monitors, logs, addLog, clearLogs, engineStatus }) {
+export default function RunControl({ accounts, tasks, settings, monitors, platforms, logs, addLog, clearLogs, engineStatus }) {
   const [isExporting, setIsExporting] = useState(false);
   const logEndRef = useRef(null);
 
@@ -23,7 +23,7 @@ export default function RunControl({ accounts, tasks, settings, monitors, logs, 
       accounts,
       tasks,
       monitors,
-      platforms: {}, // 后续可扩展平台级配置
+      platforms: platforms || [],
     };
     const res = await api.startEngine(config);
     if (res.success) addLog('success', '引擎启动成功');
