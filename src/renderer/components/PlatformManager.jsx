@@ -61,6 +61,7 @@ const SELECTOR_GROUPS = [
       { key: 'marketLockedCount', label: '锁单数量（页面统计）', placeholder: '.locked-count' },
       { key: 'marketMinPrice', label: '最低挂售价（页面统计）', placeholder: '.min-price' },
       { key: 'marketMaxPrice', label: '最高挂售价（页面统计）', placeholder: '.max-price' },
+      { key: 'marketTypeTab', label: '市场类型切换 Tab（寄售/求购）', placeholder: '.tab:has-text("寄售")' },
     ],
   },
   {
@@ -208,12 +209,33 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
     }
   };
 
-  const applyScanSuggestion = (group, key, value) => {
-    updateSelector(key, value);
-    addLog('success', `已应用选择器: ${key} = ${value}`);
+  const applyScanSuggestion = (field, value) => {
+    updateSelector(field, value);
+    addLog('success', `已应用选择器: ${field}`);
     // 自动切换到对应分组
-    const groupIndex = SELECTOR_GROUPS.findIndex(g => g.title.includes(group));
-    if (groupIndex >= 0) setActiveGroup(groupIndex);
+    const groupMap = {
+      loginPhone: 0, loginPassword: 0, loginButton: 0,
+      marketSearchInput: 1, marketSearchButton: 1, marketItemCard: 1, marketItemName: 1, marketItemPrice: 1, marketItemId: 1,
+      marketTotalCount: 1, marketLockedCount: 1, marketMinPrice: 1, marketMaxPrice: 1, marketTypeTab: 1,
+      buyButton: 2, confirmPrice: 2, confirmButton: 2, quantityInput: 2, payPasswordInput: 2, finalPayButton: 2,
+      activityItem: 3, materialItem: 3, materialName: 3, materialQuantityInput: 3, synthesisCountInput: 3, synthesisButton: 3,
+      warehouseItem: 4, warehouseItemName: 4, warehouseItemCount: 4, decomposeEntry: 4, decomposeCountInput: 4, decomposeConfirmButton: 4,
+      noticeItem: 5, noticeTitle: 5, noticeTime: 5, noticeLink: 5, noticeSummary: 5,
+    };
+    const groupIndex = groupMap[field];
+    if (groupIndex !== undefined) setActiveGroup(groupIndex);
+  };
+
+  const applyAllScanSuggestions = () => {
+    if (!scanResult?.discovered) return;
+    let count = 0;
+    for (const item of scanResult.discovered) {
+      if (item.confidence === 'high' && !form.selectors[item.field]) {
+        updateSelector(item.field, item.selector);
+        count++;
+      }
+    }
+    addLog('success', `已自动回填 ${count} 个高置信度选择器`);
   };
 
   return (
@@ -305,50 +327,77 @@ export default function PlatformManager({ platforms, setPlatforms, addLog }) {
 
             {scanResult && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 12, color: 'var(--text-sub)', marginBottom: 8 }}>
-                  扫描结果：{scanResult.title}（{scanResult.elements?.length || 0} 个元素）
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-sub)' }}>
+                    扫描结果：<strong>{scanResult.title}</strong>（发现 {scanResult.discovered?.length || 0} 个可监控字段）
+                  </div>
+                  {scanResult.discovered?.length > 0 && (
+                    <button type="button" className="btn-primary" style={{ padding: '6px 14px', fontSize: 12 }} onClick={applyAllScanSuggestions}>
+                      ⚡ 一键回填高置信度字段
+                    </button>
+                  )}
                 </div>
 
-                {/* 建议选择器 */}
-                {scanResult.suggestions && Object.keys(scanResult.suggestions).length > 0 && (
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--accent)' }}>💡 智能推荐（点击一键填入）</div>
-                    {Object.entries(scanResult.suggestions).map(([group, selectors]) => (
-                      <div key={group} style={{ marginBottom: 8 }}>
-                        <div style={{ fontSize: 11, color: 'var(--text-sub)', textTransform: 'capitalize', marginBottom: 4 }}>{group}</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {Object.entries(selectors).map(([key, value]) => (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() => applyScanSuggestion(group, key, value)}
-                              style={{
-                                padding: '4px 10px', borderRadius: 12, border: '1px solid var(--accent-soft)',
-                                background: 'rgba(255,176,0,0.08)', color: 'var(--accent)', fontSize: 11,
-                                cursor: 'pointer',
-                              }}
-                              title={`${key}: ${value}`}
-                            >
-                              {key}: {value.length > 30 ? value.slice(0, 30) + '...' : value}
-                            </button>
-                          ))}
+                {/* 发现的字段 */}
+                {scanResult.discovered?.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      {scanResult.discovered.map((item, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            padding: '10px 14px', borderRadius: 10,
+                            border: '1px solid var(--border)',
+                            background: form.selectors[item.field] ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.02)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            gap: 10,
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: form.selectors[item.field] ? 'var(--success)' : 'var(--text)' }}>
+                              {item.label}
+                              {item.confidence === 'high' && <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--accent)' }}>● 高置信</span>}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {item.selector}
+                            </div>
+                            <div style={{ fontSize: 10, color: 'var(--text-sub)', marginTop: 2 }}>
+                              样例：{item.sample?.slice(0, 30)}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => applyScanSuggestion(item.field, item.selector)}
+                            style={{
+                              padding: '5px 12px', borderRadius: 8, border: 'none',
+                              background: form.selectors[item.field] ? 'var(--success-soft)' : 'var(--accent-soft)',
+                              color: form.selectors[item.field] ? 'var(--success)' : 'var(--accent)',
+                              fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+                            }}
+                          >
+                            {form.selectors[item.field] ? '✓ 已填' : '填入'}
+                          </button>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {/* 原始元素列表 */}
-                <div style={{ maxHeight: 240, overflow: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: 10 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text-sub)', marginBottom: 6 }}>页面元素列表</div>
-                  {scanResult.elements?.slice(0, 50).map((el, i) => (
-                    <div key={i} style={{ fontSize: 11, padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: 8 }}>
-                      <span style={{ color: 'var(--accent)', minWidth: 60 }}>&lt;{el.tag}&gt;</span>
-                      <span style={{ color: 'var(--text-sub)', minWidth: 120 }}>{el.class?.slice(0, 30) || '-'}</span>
-                      <span style={{ color: 'var(--text-main)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{el.text}</span>
-                    </div>
-                  ))}
-                </div>
+                <details>
+                  <summary style={{ fontSize: 12, color: 'var(--text-sub)', cursor: 'pointer', padding: '6px 0' }}>
+                    查看原始页面元素（{scanResult.elements?.length || 0} 个）
+                  </summary>
+                  <div style={{ maxHeight: 240, overflow: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: 10, marginTop: 8 }}>
+                    {scanResult.elements?.slice(0, 50).map((el, i) => (
+                      <div key={i} style={{ fontSize: 11, padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: 8 }}>
+                        <span style={{ color: 'var(--accent)', minWidth: 60 }}>&lt;{el.tag}&gt;</span>
+                        <span style={{ color: 'var(--text-sub)', minWidth: 120 }}>{el.class?.slice(0, 30) || '-'}</span>
+                        <span style={{ color: 'var(--text-main)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{el.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </div>
             )}
           </div>

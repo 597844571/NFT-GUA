@@ -144,7 +144,15 @@ app.post('/api/scanner/scan', async (req, res) => {
   const scanner = new Scanner();
   try {
     const result = await scanner.scan(req.body.url, { pageType: req.body.pageType });
-    res.json(result);
+    // 转换 discovered 为旧格式兼容前端
+    const suggestions = {};
+    if (result.discovered) {
+      for (const item of result.discovered) {
+        if (!suggestions[item.category]) suggestions[item.category] = {};
+        suggestions[item.category][item.field] = item.selector;
+      }
+    }
+    res.json({ ...result, suggestions });
   } catch (err) {
     res.json({ success: false, error: err.message });
   }

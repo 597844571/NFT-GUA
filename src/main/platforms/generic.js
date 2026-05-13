@@ -48,9 +48,23 @@ class GenericAdapter extends PlatformAdapter {
     await this.randomDelay(0.5, 1.5);
   }
 
-  async getMarketItems(page, keyword = '') {
+  async getMarketItems(page, keyword = '', marketType = 'sale') {
     await this.navigateTo(page, 'market');
     const s = this.selectors;
+
+    // 切换市场类型 Tab（寄售/求购）
+    if (s.marketTypeTab && marketType !== 'sale') {
+      const tabKeywords = marketType === 'buy' ? ['求购', '购买', 'buy'] : ['寄售', '出售', 'sale'];
+      const tabs = await page.locator(s.marketTypeTab).all();
+      for (const tab of tabs) {
+        const text = await tab.textContent().catch(() => '');
+        if (tabKeywords.some(k => text.includes(k))) {
+          await tab.click();
+          await page.waitForTimeout(1500);
+          break;
+        }
+      }
+    }
 
     // 搜索关键词
     if (keyword && s.marketSearchInput) {

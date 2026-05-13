@@ -11,6 +11,7 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, platfor
     buyQuantity: 1,
     platform: 'yluc',
     refreshInterval: 2,
+    marketType: 'sale',
   });
 
   const isMarket = form.type === 'market';
@@ -32,7 +33,7 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, platfor
       await api.monitorAdd(item);
     }
     addLog('success', `监控已添加: ${item.keyword} [${isMarket ? '市场' : '公告'}]`);
-    setForm({ type: 'market', keyword: '', itemId: '', alertPrice: '', autoBuy: false, buyQuantity: 1, platform: 'yluc', refreshInterval: 2 });
+    setForm({ type: 'market', keyword: '', itemId: '', alertPrice: '', autoBuy: false, buyQuantity: 1, platform: 'yluc', refreshInterval: 2, marketType: 'sale' });
   };
 
   const removeMonitor = async (id) => {
@@ -105,6 +106,15 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, platfor
                 {(platforms || []).map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
               </select>
             </div>
+            {isMarket && (
+              <div>
+                <label>市场类型</label>
+                <select value={form.marketType} onChange={(e) => setForm((s) => ({ ...s, marketType: e.target.value }))}>
+                  <option value="sale">📤 寄售（出售）</option>
+                  <option value="buy">📥 求购（收购）</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {isMarket && (
@@ -145,7 +155,10 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, platfor
                   const isAnn = m.type === 'announcement';
                   return (
                     <tr key={m.id} className={result?.status === 'triggered' ? 'triggered-row' : ''}>
-                      <td>{isAnn ? '📢 公告' : '📈 市场'}</td>
+                      <td>
+                        {isAnn ? '📢 公告' : '📈 市场'}
+                        {!isAnn && m.marketType === 'buy' && <div style={{ fontSize: 10, color: 'var(--info)' }}>求购</div>}
+                      </td>
                       <td>{statusIcon(result)} {statusLabel(result)}</td>
                       <td><strong>{m.keyword}</strong></td>
                       {!isAnn && <td>{m.itemId || '-'}</td>}

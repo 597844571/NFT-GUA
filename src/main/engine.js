@@ -222,7 +222,7 @@ class Engine {
 
       case 'market_sniping':
         // 市场抢单：搜索 → 比价 → 购买
-        const marketData = await adapter.getMarketItems(page, params.keyword);
+        const marketData = await adapter.getMarketItems(page, params.keyword, params.marketType);
         const items = marketData.items || [];
         const target = items.find(i => i.price <= params.maxPrice);
         if (target) {
@@ -289,7 +289,7 @@ class Engine {
     const adapter = this.adapters.get(account.id);
     if (!page || !adapter) return;
 
-    const marketData = await adapter.getMarketItems(page, monitor.keyword);
+    const marketData = await adapter.getMarketItems(page, monitor.keyword, monitor.marketType);
     const items = marketData.items || [];
     const stats = marketData.stats || { totalCount: 0, lockedCount: 0, minPrice: 0, maxPrice: 0 };
     const matched = monitor.itemId
@@ -421,7 +421,7 @@ class Engine {
     const adapter = this.adapters.get(account.id);
     if (!page || !adapter) throw new Error('页面未初始化');
 
-    const marketData = await adapter.getMarketItems(page, monitor.keyword);
+    const marketData = await adapter.getMarketItems(page, monitor.keyword, monitor.marketType);
     const items = marketData.items || [];
     const matched = monitor.itemId
       ? items.find(i => i.itemId === monitor.itemId)

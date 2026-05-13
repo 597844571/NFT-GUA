@@ -65,6 +65,7 @@ export const DEFAULT_PLATFORMS = [
       marketLockedCount: '',
       marketMinPrice: '',
       marketMaxPrice: '',
+      marketTypeTab: '',
       buyButton: '',
       confirmPrice: '',
       confirmButton: '',
