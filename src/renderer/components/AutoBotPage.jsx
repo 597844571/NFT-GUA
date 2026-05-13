@@ -24,7 +24,13 @@ export default function AutoBotPage() {
   return (
     <div className="autobot-page">
       <aside className="autobot-sidebar">
-        <div className="autobot-brand" title="DC AutoBot">🤖</div>
+        <div className="autobot-brand">
+          <div className="autobot-brand-icon">🤖</div>
+          <div>
+            <div className="autobot-brand-text">DC AutoBot</div>
+            <div className="autobot-brand-sub">NFT 自动化</div>
+          </div>
+        </div>
         <nav className="autobot-nav">
           {tabs.map((t) => (
             <button
@@ -33,16 +39,22 @@ export default function AutoBotPage() {
               onClick={() => setActiveTab(t.key)}
               title={t.label}
             >
-              {t.icon}
+              <span className="nav-icon">{t.icon}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </nav>
         <div className="autobot-sidebar-footer">
-          <div className="autobot-status-dot" data-status={store.engineStatus.status} title={store.engineStatus.status} />
-          <div style={{fontSize: 10, marginTop: 4}}>
-            {store.accounts.filter((a) => a.enabled).length}·
-            {store.tasks.filter((t) => t.enabled).length}·
-            {store.monitors.filter((m) => m.enabled).length}
+          <div className="autobot-sidebar-footer-row">
+            <div className="autobot-status-dot" data-status={store.engineStatus.status} />
+            <span className="autobot-status-label">
+              {store.engineStatus.status === 'running' ? '运行中' : store.engineStatus.status === 'paused' ? '已暂停' : '已停止'}
+            </span>
+          </div>
+          <div className="autobot-sidebar-counts">
+            <span>👤 {store.accounts.filter((a) => a.enabled).length}</span>
+            <span>📋 {store.tasks.filter((t) => t.enabled).length}</span>
+            <span>📡 {store.monitors.filter((m) => m.enabled).length}</span>
           </div>
         </div>
       </aside>
