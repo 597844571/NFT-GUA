@@ -222,7 +222,8 @@ class Engine {
 
       case 'market_sniping':
         // 市场抢单：搜索 → 比价 → 购买
-        const items = await adapter.getMarketItems(page, params.keyword);
+        const marketData = await adapter.getMarketItems(page, params.keyword);
+        const items = marketData.items || [];
         const target = items.find(i => i.price <= params.maxPrice);
         if (target) {
           this.logger.success(`[${task.name}] 发现目标: ${target.name} ¥${target.price}`);
@@ -288,7 +289,9 @@ class Engine {
     const adapter = this.adapters.get(account.id);
     if (!page || !adapter) return;
 
-    const items = await adapter.getMarketItems(page, monitor.keyword);
+    const marketData = await adapter.getMarketItems(page, monitor.keyword);
+    const items = marketData.items || [];
+    const stats = marketData.stats || { totalCount: 0, lockedCount: 0, minPrice: 0, maxPrice: 0 };
     const matched = monitor.itemId
       ? items.find(i => i.itemId === monitor.itemId)
       : items[0];
@@ -304,6 +307,7 @@ class Engine {
       status: matched && matched.price <= monitor.alertPrice ? 'triggered' : 'monitoring',
       lastUpdate: new Date().toLocaleTimeString(),
       autoBuy: monitor.autoBuy,
+      stats,
     };
 
     // 只有价格变化或触发时才推送
@@ -417,7 +421,8 @@ class Engine {
     const adapter = this.adapters.get(account.id);
     if (!page || !adapter) throw new Error('页面未初始化');
 
-    const items = await adapter.getMarketItems(page, monitor.keyword);
+    const marketData = await adapter.getMarketItems(page, monitor.keyword);
+    const items = marketData.items || [];
     const matched = monitor.itemId
       ? items.find(i => i.itemId === monitor.itemId)
       : items[0];

@@ -19,6 +19,7 @@ class PlatformAdapter {
   }
 
   // 获取市场列表
+  // 返回 { items: [{name, price, itemId}[]], stats: {totalCount, lockedCount, minPrice, maxPrice} }
   async getMarketItems(page, keyword = '') {
     throw new Error('getMarketItems() 必须在子类实现');
   }

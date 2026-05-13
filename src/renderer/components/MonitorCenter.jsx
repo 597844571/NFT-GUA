@@ -131,6 +131,8 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, platfor
                   {monitors.some(m => m.type !== 'announcement') && <th>编号</th>}
                   {monitors.some(m => m.type !== 'announcement') && <th>当前价</th>}
                   {monitors.some(m => m.type !== 'announcement') && <th>阈值</th>}
+                  {monitors.some(m => m.type !== 'announcement') && <th>挂售/锁单</th>}
+                  {monitors.some(m => m.type !== 'announcement') && <th>最低/最高</th>}
                   {monitors.some(m => m.type === 'announcement') && <th>匹配公告</th>}
                   {monitors.some(m => m.type !== 'announcement') && <th>自动抢单</th>}
                   <th>最后更新</th>
@@ -149,6 +151,28 @@ export default function MonitorCenter({ accounts, monitors, setMonitors, platfor
                       {!isAnn && <td>{m.itemId || '-'}</td>}
                       {!isAnn && <td className="price-cell">{result?.currentPrice != null ? `¥${result.currentPrice}` : '-'}</td>}
                       {!isAnn && <td>¥{m.alertPrice}</td>}
+                      {!isAnn && (
+                        <td style={{ fontSize: 12 }}>
+                          {result?.stats ? (
+                            <div>
+                              <div style={{ color: 'var(--success)' }}>挂售 {result.stats.totalCount}</div>
+                              {result.stats.lockedCount > 0 && (
+                                <div style={{ color: 'var(--danger)', fontSize: 11 }}>锁单 {result.stats.lockedCount}</div>
+                              )}
+                            </div>
+                          ) : '-'}
+                        </td>
+                      )}
+                      {!isAnn && (
+                        <td style={{ fontSize: 12 }}>
+                          {result?.stats ? (
+                            <div>
+                              <div style={{ color: 'var(--info)' }}>低 ¥{result.stats.minPrice}</div>
+                              <div style={{ color: 'var(--warn)', fontSize: 11 }}>高 ¥{result.stats.maxPrice}</div>
+                            </div>
+                          ) : '-'}
+                        </td>
+                      )}
                       {isAnn && (
                         <td>
                           {result?.matchedCount > 0 ? (

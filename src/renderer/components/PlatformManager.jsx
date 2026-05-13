@@ -57,6 +57,10 @@ const SELECTOR_GROUPS = [
       { key: 'marketItemName', label: '藏品名称（在卡片内）', placeholder: '.item-name' },
       { key: 'marketItemPrice', label: '藏品价格（在卡片内）', placeholder: '.item-price' },
       { key: 'marketItemId', label: '藏品编号属性', placeholder: '[data-id]' },
+      { key: 'marketTotalCount', label: '挂售总数（页面统计）', placeholder: '.total-count' },
+      { key: 'marketLockedCount', label: '锁单数量（页面统计）', placeholder: '.locked-count' },
+      { key: 'marketMinPrice', label: '最低挂售价（页面统计）', placeholder: '.min-price' },
+      { key: 'marketMaxPrice', label: '最高挂售价（页面统计）', placeholder: '.max-price' },
     ],
   },
   {

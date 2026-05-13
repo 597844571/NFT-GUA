@@ -63,7 +63,7 @@ class GenericAdapter extends PlatformAdapter {
     const items = [];
     if (!s.marketItemCard) {
       console.warn('未配置市场列表项选择器，返回空数组');
-      return items;
+      return { items, stats: { totalCount: 0, lockedCount: 0, minPrice: 0, maxPrice: 0 } };
     }
 
     const cards = await page.locator(s.marketItemCard).all();
@@ -80,7 +80,41 @@ class GenericAdapter extends PlatformAdapter {
         : '';
       items.push({ name: name.trim(), price, itemId });
     }
-    return items;
+
+    // 市场统计数据
+    const stats = { totalCount: items.length, lockedCount: 0, minPrice: 0, maxPrice: 0 };
+
+    // 从列表计算最高/最低价格
+    if (items.length > 0) {
+      const prices = items.map(i => i.price).filter(p => p > 0);
+      stats.minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      stats.maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+    }
+
+    // 从页面抓取挂售总数和锁单数（如果有选择器）
+    if (s.marketTotalCount) {
+      const totalText = await page.locator(s.marketTotalCount).first().textContent().catch(() => '');
+      const total = parseInt(totalText.replace(/[^0-9]/g, '')) || 0;
+      if (total > 0) stats.totalCount = total;
+    }
+    if (s.marketLockedCount) {
+      const lockedText = await page.locator(s.marketLockedCount).first().textContent().catch(() => '');
+      const locked = parseInt(lockedText.replace(/[^0-9]/g, '')) || 0;
+      stats.lockedCount = locked;
+    }
+    // 页面上的最高/最低价（更精确）
+    if (s.marketMinPrice) {
+      const minText = await page.locator(s.marketMinPrice).first().textContent().catch(() => '');
+      const min = parseFloat(minText.replace(/[^0-9.]/g, '')) || 0;
+      if (min > 0) stats.minPrice = min;
+    }
+    if (s.marketMaxPrice) {
+      const maxText = await page.locator(s.marketMaxPrice).first().textContent().catch(() => '');
+      const max = parseFloat(maxText.replace(/[^0-9.]/g, '')) || 0;
+      if (max > 0) stats.maxPrice = max;
+    }
+
+    return { items, stats };
   }
 
   async getItemDetail(page, itemId) {
