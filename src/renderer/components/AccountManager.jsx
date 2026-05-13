@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
+import { PLATFORMS } from '@shared/constants';
 
 export default function AccountManager({ accounts, setAccounts, platforms, addLog }) {
   const [editing, setEditing] = useState(null);
