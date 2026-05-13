@@ -48,6 +48,11 @@ class PlatformAdapter {
     throw new Error('getInventory() 必须在子类实现');
   }
 
+  // 获取公告/活动列表
+  async getAnnouncements(page) {
+    throw new Error('getAnnouncements() 必须在子类实现');
+  }
+
   // 辅助方法：随机延时
   async randomDelay(min, max) {
     const ms = Math.floor((min + Math.random() * (max - min)) * 1000);

@@ -49,6 +49,7 @@ export const DEFAULT_PLATFORMS = [
     warehouseUrl: 'https://h5.yluc.cn/#/pages/warehouse/index',
     activityUrl: 'https://h5.yluc.cn/#/pages/activity/index',
     saleUrl: 'https://h5.yluc.cn/#/pages/goods/index',
+    noticeUrl: '',
     selectors: {
       loginPhone: '.login-form_input.phone .uni-input-input',
       loginPassword: '.uni-input-input[type="password"]',
@@ -78,6 +79,12 @@ export const DEFAULT_PLATFORMS = [
       decomposeEntry: '',
       decomposeCountInput: '',
       decomposeConfirmButton: '',
+      // 公告/活动通知相关选择器
+      noticeItem: '',
+      noticeTitle: '',
+      noticeTime: '',
+      noticeLink: '',
+      noticeSummary: '',
     },
   },
 ];

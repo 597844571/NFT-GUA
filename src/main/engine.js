@@ -274,6 +274,12 @@ class Engine {
   }
 
   async _checkMonitor(monitor) {
+    if (monitor.type === 'announcement') {
+      await this._checkAnnouncementMonitor(monitor);
+      return;
+    }
+
+    // 默认 market 类型监控
     // 找一个该平台的账号来获取页面
     const account = (this.config.accounts || []).find(a => a.platform === monitor.platform && a.enabled);
     if (!account) return;
@@ -291,6 +297,7 @@ class Engine {
     const result = {
       id: monitor.id,
       keyword: monitor.keyword,
+      type: 'market',
       currentPrice: matched?.price ?? null,
       alertPrice: monitor.alertPrice,
       itemId: matched?.itemId ?? '',
@@ -325,6 +332,55 @@ class Engine {
           this.notifier.send('❌ 自动抢单失败', `藏品：${monitor.keyword}\n错误：${err.message}`).catch(() => {});
         }
       }
+    }
+  }
+
+  async _checkAnnouncementMonitor(monitor) {
+    const account = (this.config.accounts || []).find(a => a.platform === monitor.platform && a.enabled);
+    if (!account) return;
+
+    const page = this.pages.get(account.id);
+    const adapter = this.adapters.get(account.id);
+    if (!page || !adapter) return;
+
+    const announcements = await adapter.getAnnouncements(page);
+    const keywords = (monitor.keywords || monitor.keyword || '').split(/[,，]/).map(k => k.trim()).filter(Boolean);
+
+    const matched = announcements.filter(a => {
+      const text = `${a.title} ${a.summary}`.toLowerCase();
+      return keywords.some(k => text.includes(k.toLowerCase()));
+    });
+
+    const previous = this.monitorResults.get(monitor.id);
+    const matchedTitles = matched.map(m => m.title).join(' | ');
+
+    // 判断是否有新匹配的公告（简单用标题列表是否变化来判断）
+    const result = {
+      id: monitor.id,
+      keyword: monitor.keyword,
+      type: 'announcement',
+      matchedCount: matched.length,
+      matchedTitles: matchedTitles,
+      announcements: matched.slice(0, 5), // 最多存5条
+      status: matched.length > 0 ? 'triggered' : 'monitoring',
+      lastUpdate: new Date().toLocaleTimeString(),
+    };
+
+    const prevTitles = previous?.matchedTitles || '';
+    const isNew = matched.length > 0 && prevTitles !== matchedTitles;
+
+    if (!previous || isNew || result.status === 'triggered') {
+      this.monitorResults.set(monitor.id, result);
+      if (this.onMonitorUpdate) this.onMonitorUpdate(result);
+    }
+
+    if (isNew && matched.length > 0) {
+      const top = matched[0];
+      this.logger.success(`📢 活动公告监控触发 [${monitor.keyword}] 发现 ${matched.length} 条匹配公告`);
+      this.notifier.send(
+        `📢 新活动公告：${top.title}`,
+        `关键词：${monitor.keyword}\n匹配数：${matched.length} 条\n时间：${top.time || '-'}\n${top.url ? `链接：${top.url}` : ''}`
+      ).catch(() => {});
     }
   }
 

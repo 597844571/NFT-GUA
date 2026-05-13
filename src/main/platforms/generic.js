@@ -225,6 +225,75 @@ class GenericAdapter extends PlatformAdapter {
     }
     return items;
   }
+
+  async getAnnouncements(page) {
+    const s = this.selectors;
+    const items = [];
+
+    // 优先使用配置的 noticeUrl，否则尝试 activityUrl
+    const noticeUrl = this.urls.notice || this.urls.activity || '';
+    if (!noticeUrl) {
+      console.warn('未配置公告页 URL，返回空数组');
+      return items;
+    }
+
+    await page.goto(noticeUrl);
+    await page.waitForLoadState('networkidle');
+    await this.randomDelay(0.5, 1.5);
+
+    if (!s.noticeItem) {
+      console.warn('未配置公告列表项选择器，返回空数组');
+      return items;
+    }
+
+    const cards = await page.locator(s.noticeItem).all();
+    for (const card of cards) {
+      const title = s.noticeTitle
+        ? await card.locator(s.noticeTitle).first().textContent().catch(() => '')
+        : '';
+      const time = s.noticeTime
+        ? await card.locator(s.noticeTime).first().textContent().catch(() => '')
+        : '';
+      const summary = s.noticeSummary
+        ? await card.locator(s.noticeSummary).first().textContent().catch(() => '')
+        : '';
+
+      // 尝试获取链接：href 属性 或 data-url 属性
+      let url = '';
+      if (s.noticeLink) {
+        url = await card.locator(s.noticeLink).first().getAttribute('href').catch(() => '');
+        if (!url) {
+          url = await card.locator(s.noticeLink).first().getAttribute('data-url').catch(() => '');
+        }
+      }
+      // 如果 card 本身是链接元素，尝试从 card 取
+      if (!url) {
+        url = await card.getAttribute('href').catch(() => '');
+      }
+      if (!url) {
+        url = await card.getAttribute('data-url').catch(() => '');
+      }
+
+      // 相对路径转绝对路径
+      if (url && url.startsWith('/')) {
+        const base = new URL(noticeUrl);
+        url = `${base.origin}${url}`;
+      }
+      // uni-app 路由如果是 #/pages/... 这种，可能需要拼接完整 URL
+      if (url && url.startsWith('#')) {
+        const base = new URL(noticeUrl);
+        url = `${base.origin}/${url}`;
+      }
+
+      items.push({
+        title: title.trim(),
+        time: time.trim(),
+        summary: summary.trim(),
+        url: url.trim(),
+      });
+    }
+    return items;
+  }
 }
 
 module.exports = GenericAdapter;
